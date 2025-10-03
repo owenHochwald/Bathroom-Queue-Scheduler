@@ -6,7 +6,9 @@ import (
 )
 
 type Application struct {
-	DB              *redis.Client
+	DB *redis.Client
+
+	QueueService    services.QueueServiceInterface
 	BathroomService services.BathroomServiceInterface
 }
 
@@ -20,4 +22,5 @@ func NewApplication(db *redis.Client) *Application {
 
 func initServices(app *Application) {
 	app.BathroomService = services.NewBathroomService()
+	app.QueueService = services.NewQueueService(app.DB)
 }
