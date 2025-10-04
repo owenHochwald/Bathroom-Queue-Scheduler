@@ -15,11 +15,17 @@ type QueuePosition struct {
 	JoinedAt    int64  `json:"joined_at"`
 }
 
+type QueueStatus struct {
+	IsOccupied  bool            `json:"is_occupied"`
+	CurrentUser string          `json:"current_user"`
+	Queue       []QueuePosition `json:"queue"`
+}
+
 type QueueServiceInterface interface {
 	JoinQueue(userID string, isEmergency bool) error
 	LeaveQueue(userID string) error
 	GetPosition(userID string) (int, error)
-	GetQueueStatus() ([]QueuePosition, error)
+	GetQueuePositions() ([]QueuePosition, error)
 	EstimateWaitTime(userID string) (int, error)
 }
 
@@ -76,7 +82,7 @@ func (q QueueService) GetPosition(userID string) (int, error) {
 	return int(position), nil
 }
 
-func (q QueueService) GetQueueStatus() ([]QueuePosition, error) {
+func (q QueueService) GetQueuePositions() ([]QueuePosition, error) {
 	ctx := context.Background()
 
 	res, err := q.redis.ZRangeWithScores(ctx, "bathroom:queue", 0, -1).Result()
@@ -101,7 +107,6 @@ func (q QueueService) GetQueueStatus() ([]QueuePosition, error) {
 	return queue, nil
 }
 
-// Returns the estimated wait time in seconds
 func (q QueueService) EstimateWaitTime(userID string) (int, error) {
 	//TODO: Use an average to estimate wait time * position in queue
 	pos, err := q.GetPosition(userID)
@@ -112,4 +117,24 @@ func (q QueueService) EstimateWaitTime(userID string) (int, error) {
 
 	// 15 minutes per position
 	return pos * 60 * 15, nil
+}
+
+func (q QueueService) GetStatus() (*QueueStatus, error) {
+	queue, err := q.GetQueuePositions()
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get queue status: %w", err)
+	}
+
+	first, err := q.redis.ZRange(context.Background(), "bathroom:queue", 0, 0).Result()
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get queue status: %w", err)
+	}
+
+	return &QueueStatus{
+		IsOccupied:  len(queue) > 0,
+		CurrentUser: first[0],
+		Queue:       queue,
+	}, nil
 }
