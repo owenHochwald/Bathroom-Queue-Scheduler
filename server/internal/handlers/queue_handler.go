@@ -21,6 +21,10 @@ type LeaveQueueRequest struct {
 	UserID string `json:"user_id" validate:"required,min=3,max=20"`
 }
 
+type GetPositionRequest struct {
+	UserID string `json:"user_id" validate:"required,min=3,max=20"`
+}
+
 func NewQueueHandler(serviceInterface services.QueueServiceInterface) *QueueHandler {
 	return &QueueHandler{
 		QueueService: serviceInterface,
@@ -72,4 +76,45 @@ func (q *QueueHandler) HandleLeave(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"message": "success"})
+}
+
+func (q *QueueHandler) HandleStatus(c *gin.Context) {
+	queue, err := q.QueueService.GetStatus()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, queue)
+}
+
+func (q *QueueHandler) HandleGetPosition(c *gin.Context) {
+	var request GetPositionRequest
+
+	if err := c.ShouldBind(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	position, err := q.QueueService.GetPosition(request.UserID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	waitTime, err := q.QueueService.EstimateWaitTime(request.UserID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"userID":    request.UserID,
+		"position":  position,
+		"wait_time": waitTime,
+	})
+
 }

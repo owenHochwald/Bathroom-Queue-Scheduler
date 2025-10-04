@@ -12,6 +12,8 @@ func SetupRoutes(r *gin.Engine, app *Application) {
 	queue := api.Group("/queue")
 	queue.POST("/join", app.QueueHandler.HandleJoin)
 	queue.DELETE("/leave", app.QueueHandler.HandleLeave)
+	queue.GET("/status", app.QueueHandler.HandleStatus)
+	queue.GET("/position", app.QueueHandler.HandleGetPosition)
 
 	api.GET("/status")
 	api.GET("/stats/:user_id")

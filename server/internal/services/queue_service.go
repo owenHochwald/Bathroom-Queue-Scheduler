@@ -27,6 +27,7 @@ type QueueServiceInterface interface {
 	GetPosition(userID string) (int, error)
 	GetQueuePositions() ([]QueuePosition, error)
 	EstimateWaitTime(userID string) (int, error)
+	GetStatus() (*QueueStatus, error)
 }
 
 type QueueService struct {
