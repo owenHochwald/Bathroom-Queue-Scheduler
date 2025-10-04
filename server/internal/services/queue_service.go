@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -19,6 +20,12 @@ type QueueStatus struct {
 	IsOccupied  bool            `json:"is_occupied"`
 	CurrentUser string          `json:"current_user"`
 	Queue       []QueuePosition `json:"queue"`
+}
+
+type SessionHistory struct {
+	UserID    string `json:"user_id"`
+	Duration  int    `json:"duration"`
+	Timestamp int64  `json:"timestamp"`
 }
 
 type QueueServiceInterface interface {
@@ -138,4 +145,37 @@ func (q QueueService) GetStatus() (*QueueStatus, error) {
 		CurrentUser: first[0],
 		Queue:       queue,
 	}, nil
+}
+
+func (q QueueService) GetHistory() ([]SessionHistory, error) {
+	var history []SessionHistory
+
+	items, err := q.redis.LRange(context.Background(), "bathroom:history", 0, -1).Result()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get history: %w", err)
+	}
+
+	for _, item := range items {
+		var session SessionHistory
+		json.Unmarshal([]byte(item), &session)
+		history = append(history, session)
+	}
+	return history, nil
+}
+
+func (q QueueService) AddHistory(userID string, duration int) error {
+	ctx := context.Background()
+
+	session := SessionHistory{
+		UserID:    userID,
+		Duration:  duration,
+		Timestamp: time.Now().Unix(),
+	}
+
+	sessionJSON, _ := json.Marshal(session)
+	q.redis.LPush(ctx, "bathroom:history", string(sessionJSON)).Result()
+
+	q.redis.LTrim(ctx, "bathroom:history", 0, 99)
+
+	return nil
 }
