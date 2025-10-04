@@ -49,12 +49,17 @@ func NewQueueService(redis *redis.Client) QueueServiceInterface {
 
 func (q QueueService) JoinQueue(userID string, isEmergency bool) error {
 	ctx := context.Background()
+	count, _ := q.redis.ZCard(ctx, "bathroom:queue").Result()
 	var score float64
+
 	if isEmergency {
-		score = 0
+		if count > 0 {
+			score = 1
+		} else {
+			score = 0
+		}
 	} else {
 		score = float64(time.Now().Unix())
-
 	}
 
 	_, err := q.redis.ZAdd(ctx, "bathroom:queue",
@@ -63,16 +68,49 @@ func (q QueueService) JoinQueue(userID string, isEmergency bool) error {
 	if err != nil {
 		return fmt.Errorf("failed to add user to queue: %w", err)
 	}
+
+	// start counter when first user joins
+	if count == 0 {
+		q.redis.Set(ctx, fmt.Sprintf("user:%s:current_session", userID),
+			time.Now().Unix(), time.Hour*1)
+	}
 	return nil
 }
 
 func (q QueueService) LeaveQueue(userID string) error {
 	ctx := context.Background()
 
-	_, err := q.redis.ZRem(ctx, "bathroom:queue", userID).Result()
+	position, err := q.GetPosition(userID)
+
+	var duration int
+	if position == 0 {
+		startTime, err := q.redis.Get(ctx, fmt.Sprintf("user:%s:current_session", userID)).Int()
+
+		if err == nil {
+			duration = int(time.Now().Unix()) - startTime
+
+			q.UpdateUserStats(userID, duration)
+			q.AddHistory(userID, duration)
+		}
+		q.redis.Del(ctx, fmt.Sprintf("user:%s:current_session", userID))
+	}
+
+	_, err = q.redis.ZRem(ctx, "bathroom:queue", userID).Result()
 
 	if err != nil {
 		return fmt.Errorf("failed to remove user from queue: %w", err)
+	}
+
+	// start time of next user and publish notification
+	nextUsers, _ := q.redis.ZRange(ctx, "bathroom:queue", 0, 0).Result()
+	if len(nextUsers) > 0 {
+		nextUser := nextUsers[0]
+		q.redis.Set(ctx, fmt.Sprintf("user:%s:current_session", nextUser),
+			time.Now().Unix(), 1*time.Hour)
+
+		// Publish notification (they're up!)
+		//q.redis.Publish(ctx, "bathroom:events",
+		//	fmt.Sprintf(`{"type":"your_turn","user":"%s"}`, nextUser))
 	}
 
 	return nil
@@ -178,4 +216,8 @@ func (q QueueService) AddHistory(userID string, duration int) error {
 	q.redis.LTrim(ctx, "bathroom:history", 0, 99)
 
 	return nil
+}
+
+func (q QueueService) UpdateUserStats(id string, duration int) {
+
 }
