@@ -10,12 +10,8 @@ func SetupRoutes(r *gin.Engine, app *Application) {
 	api := r.Group("/api")
 
 	queue := api.Group("/queue")
-	queue.POST("/join")
-	queue.DELETE("/leave/:user_id")
-
-	bathroom := api.Group("/bathroom")
-	bathroom.POST("/occupy")
-	bathroom.POST("/vacate")
+	queue.POST("/join", app.QueueHandler.HandleJoin)
+	queue.DELETE("/leave", app.QueueHandler.HandleLeave)
 
 	api.GET("/status")
 	api.GET("/stats/:user_id")
