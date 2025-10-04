@@ -221,3 +221,14 @@ func (q QueueService) AddHistory(userID string, duration int) error {
 func (q QueueService) UpdateUserStats(id string, duration int) {
 
 }
+
+func (q QueueService) GetUserStats(userID string) (map[string]string, error) {
+	ctx := context.Background()
+	stats, err := q.redis.HGetAll(ctx, fmt.Sprintf("user:%s:stats", userID)).Result()
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user stats: %w", err)
+	}
+
+	return stats, err
+}
