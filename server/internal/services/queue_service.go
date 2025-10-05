@@ -38,12 +38,14 @@ type QueueServiceInterface interface {
 }
 
 type QueueService struct {
-	redis *redis.Client
+	redis     *redis.Client
+	publisher Publisher
 }
 
 func NewQueueService(redis *redis.Client) QueueServiceInterface {
 	return &QueueService{
-		redis: redis,
+		redis:     redis,
+		publisher: NewRedisPublisher(redis),
 	}
 }
 
@@ -69,8 +71,12 @@ func (q QueueService) JoinQueue(userID string, isEmergency bool) error {
 		return fmt.Errorf("failed to add user to queue: %w", err)
 	}
 
+	q.publisher.Publish(fmt.Sprintf(`{"type":"join","user":"%s"}`, userID))
+
 	// start counter when first user joins
 	if count == 0 {
+		q.publisher.Publish(fmt.Sprintf(`{"type":"next_up","user":"%s"}`, userID))
+
 		q.redis.Set(ctx, fmt.Sprintf("user:%s:current_session", userID),
 			time.Now().Unix(), time.Hour*1)
 	}
@@ -97,6 +103,8 @@ func (q QueueService) LeaveQueue(userID string) error {
 
 	_, err = q.redis.ZRem(ctx, "bathroom:queue", userID).Result()
 
+	q.publisher.Publish(fmt.Sprintf(`{"type":"leave","user":"%s"}`, userID))
+
 	if err != nil {
 		return fmt.Errorf("failed to remove user from queue: %w", err)
 	}
@@ -108,9 +116,7 @@ func (q QueueService) LeaveQueue(userID string) error {
 		q.redis.Set(ctx, fmt.Sprintf("user:%s:current_session", nextUser),
 			time.Now().Unix(), 1*time.Hour)
 
-		// Publish notification (they're up!)
-		//q.redis.Publish(ctx, "bathroom:events",
-		//	fmt.Sprintf(`{"type":"your_turn","user":"%s"}`, nextUser))
+		q.publisher.Publish(fmt.Sprintf(`{"type":"next_up","user":"%s"}`, nextUser))
 	}
 
 	return nil
