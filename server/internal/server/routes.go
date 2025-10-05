@@ -15,8 +15,10 @@ func SetupRoutes(r *gin.Engine, app *Application) {
 	queue.GET("/status", app.QueueHandler.HandleStatus)
 	queue.GET("/position", app.QueueHandler.HandleGetPosition)
 
+	api.GET("/stats/:user_id", app.QueueHandler.HandleGetUserStats)
+	api.GET("/history", app.QueueHandler.HandleGetHistory)
+
 	api.GET("/status")
-	api.GET("/stats/:user_id")
 	api.GET("/leaderboards")
 
 	r.GET("/ws", app.WsManager.HandleWebSocket)

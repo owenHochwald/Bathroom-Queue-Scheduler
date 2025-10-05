@@ -116,5 +116,26 @@ func (q *QueueHandler) HandleGetPosition(c *gin.Context) {
 		"position":  position,
 		"wait_time": waitTime,
 	})
+}
 
+func (q *QueueHandler) HandleGetUserStats(c *gin.Context) {
+	userID := c.Param("user_id")
+
+	stats, err := q.QueueService.GetUserStats(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, stats)
+}
+
+func (q *QueueHandler) HandleGetHistory(c *gin.Context) {
+	history, err := q.QueueService.GetHistory()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, history)
 }
