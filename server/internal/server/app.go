@@ -9,10 +9,10 @@ import (
 type Application struct {
 	DB *redis.Client
 
-	QueueService    services.QueueServiceInterface
-	BathroomService services.BathroomServiceInterface
+	QueueService services.QueueServiceInterface
 
 	QueueHandler *handlers.QueueHandler
+	WsManager    *handlers.WSManager
 }
 
 func NewApplication(db *redis.Client) *Application {
@@ -25,11 +25,11 @@ func NewApplication(db *redis.Client) *Application {
 }
 
 func initServices(app *Application) {
-	app.BathroomService = services.NewBathroomService()
 	app.QueueService = services.NewQueueService(app.DB)
 }
 
 func initHandlers(app *Application) {
 	app.QueueHandler = handlers.NewQueueHandler(app.QueueService)
+	app.WsManager = handlers.NewWSManager(app.DB)
 
 }
