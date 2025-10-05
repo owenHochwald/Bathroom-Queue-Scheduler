@@ -66,7 +66,7 @@ func (q *QueueHandler) HandleLeave(c *gin.Context) {
 	validate := validator.New()
 	if err := validate.Struct(request); err != nil {
 		errors := err.(validator.ValidationErrors)
-		c.JSON(http.StatusBadGateway, gin.H{"errors": errors})
+		c.JSON(http.StatusBadRequest, gin.H{"errors": errors})
 		return
 	}
 

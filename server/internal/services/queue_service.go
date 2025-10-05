@@ -50,7 +50,9 @@ func NewQueueService(redis *redis.Client) QueueServiceInterface {
 }
 
 func (q QueueService) JoinQueue(userID string, isEmergency bool) error {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	count, _ := q.redis.ZCard(ctx, "bathroom:queue").Result()
 	var score float64
 
@@ -84,7 +86,8 @@ func (q QueueService) JoinQueue(userID string, isEmergency bool) error {
 }
 
 func (q QueueService) LeaveQueue(userID string) error {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	position, err := q.GetPosition(userID)
 
@@ -123,7 +126,8 @@ func (q QueueService) LeaveQueue(userID string) error {
 }
 
 func (q QueueService) GetPosition(userID string) (int, error) {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	position, err := q.redis.ZRank(ctx, "bathroom:queue", userID).Result()
 
@@ -135,7 +139,8 @@ func (q QueueService) GetPosition(userID string) (int, error) {
 }
 
 func (q QueueService) GetQueuePositions() ([]QueuePosition, error) {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	res, err := q.redis.ZRangeWithScores(ctx, "bathroom:queue", 0, -1).Result()
 
@@ -150,7 +155,7 @@ func (q QueueService) GetQueuePositions() ([]QueuePosition, error) {
 		pos := QueuePosition{
 			UserID:      userID,
 			Position:    i,
-			IsEmergency: i == 0,
+			IsEmergency: joinedTime < 10,
 			JoinedAt:    int64(joinedTime),
 		}
 		queue = append(queue, pos)
@@ -173,20 +178,18 @@ func (q QueueService) EstimateWaitTime(userID string) (int, error) {
 
 func (q QueueService) GetStatus() (*QueueStatus, error) {
 	queue, err := q.GetQueuePositions()
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to get queue status: %w", err)
 	}
 
-	first, err := q.redis.ZRange(context.Background(), "bathroom:queue", 0, 0).Result()
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to get queue status: %w", err)
+	var currentUser string
+	if len(queue) > 0 {
+		currentUser = queue[0].UserID
 	}
 
 	return &QueueStatus{
 		IsOccupied:  len(queue) > 0,
-		CurrentUser: first[0],
+		CurrentUser: currentUser,
 		Queue:       queue,
 	}, nil
 }
@@ -208,8 +211,8 @@ func (q QueueService) GetHistory() ([]SessionHistory, error) {
 }
 
 func (q QueueService) AddHistory(userID string, duration int) error {
-	ctx := context.Background()
-
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	session := SessionHistory{
 		UserID:    userID,
 		Duration:  duration,
@@ -224,12 +227,9 @@ func (q QueueService) AddHistory(userID string, duration int) error {
 	return nil
 }
 
-func (q QueueService) UpdateUserStats(id string, duration int) {
-
-}
-
 func (q QueueService) GetUserStats(userID string) (map[string]string, error) {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	stats, err := q.redis.HGetAll(ctx, fmt.Sprintf("user:%s:stats", userID)).Result()
 
 	if err != nil {
@@ -237,4 +237,26 @@ func (q QueueService) GetUserStats(userID string) (map[string]string, error) {
 	}
 
 	return stats, err
+}
+
+func (q QueueService) UpdateUserStats(userID string, duration int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	statsKey := fmt.Sprintf("user:%s:stats", userID)
+
+	q.redis.HIncrBy(ctx, statsKey, "total_sessions", 1)
+
+	q.redis.HIncrBy(ctx, statsKey, "total_time_seconds", int64(duration))
+
+	longest, _ := q.redis.HGet(ctx, statsKey, "longest_session").Int64()
+	if int64(duration) > longest {
+		q.redis.HSet(ctx, statsKey, "longest_session", duration)
+	}
+
+	shortest, err := q.redis.HGet(ctx, statsKey, "shortest_session").Int64()
+	if err != nil || int64(duration) < shortest || shortest == 0 {
+		q.redis.HSet(ctx, statsKey, "shortest_session", duration)
+	}
+
+	return nil
 }
