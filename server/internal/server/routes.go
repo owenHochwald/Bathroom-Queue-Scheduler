@@ -19,7 +19,7 @@ func SetupRoutes(r *gin.Engine, app *Application) {
 	api.GET("/stats/:user_id")
 	api.GET("/leaderboards")
 
-	r.GET("/ws")
+	r.GET("/ws", app.WsManager.HandleWebSocket)
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(
