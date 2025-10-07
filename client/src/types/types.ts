@@ -5,15 +5,14 @@ export interface HistoryItem {
 }
 
 export interface QueuePosition {
-    userId: string;
+    user_id: string;
     position: number;
-    isEmergency: boolean;
-    joinedAt: Date;
-
+    is_emergency: boolean;
+    joined_at: number;
 }
 
 export interface QueueStatus {
-	is_occupied: boolean;
-	current_user: string;
-	queue: QueuePosition[];
+    is_occupied: boolean;
+    current_user: string;
+    queue: QueuePosition[];
 }
