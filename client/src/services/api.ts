@@ -20,12 +20,13 @@ export const leaveQueue = async (userId: string): Promise<AxiosResponse<any, any
     });
 }
 
-export const getQueueStatus = async (): Promise<AxiosResponse<QueueStatus, any>> => {
-    return await client.get<QueueStatus>('/status')
+export const getQueueStatus = async (): Promise<AxiosResponse<QueueStatus>> => {
+    return await client.get<QueueStatus>('/queue/status');
 }
 
+
 export const getUserStats = async (userId: string): Promise<AxiosResponse<any, any>> => {
-    return await client.get("/status")
+    return await client.get("/status/" + userId)
 
 
 }

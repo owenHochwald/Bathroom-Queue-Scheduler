@@ -1,13 +1,11 @@
 import axios from "axios";
-import dotenv from 'dotenv';
-dotenv.config();
-const baseUrl = process.env.BASE_URL;
 
+const baseUrl = "http://localhost:8080/api"
 
 export const client = axios.create({
-    baseURL : baseUrl,
-    headers : {
-        'Content-Type': 'application/json'
+    baseURL: baseUrl,
+    timeout: 5000,
+    headers: {
+        'Content-Type': 'application/json',
     }
-})
-
+});
