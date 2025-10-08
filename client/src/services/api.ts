@@ -1,6 +1,6 @@
 import { dataTagErrorSymbol, useQuery } from '@tanstack/react-query'
 import axios, { AxiosResponse } from 'axios'
-import { HistoryItem, QueueStatus } from '../types/types'
+import { HistoryItem, QueueStatus, UserStatus } from '../types/types'
 import { client } from './client'
 
 export const joinQueue = async (userId: string, isEmergency: boolean): Promise<AxiosResponse<any, any>> => {
@@ -20,6 +20,10 @@ export const leaveQueue = async (userId: string): Promise<AxiosResponse<any, any
 
 export const getQueueStatus = async (): Promise<AxiosResponse<QueueStatus>> => {
     return await client.get<QueueStatus>('/queue/status');
+}
+
+export const getUserPosition = async (userId: string): Promise<AxiosResponse<UserStatus>> => {
+    return await client.get<UserStatus>('/queue/position' + userId)
 }
 
 

@@ -16,3 +16,9 @@ export interface QueueStatus {
     current_user: string;
     queue: QueuePosition[];
 }
+
+export interface UserStatus {
+    user_id: string;
+    position: number;
+    wait_time: number;
+}

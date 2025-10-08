@@ -112,7 +112,7 @@ func (q *QueueHandler) HandleGetPosition(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{
-		"userID":    request.UserID,
+		"user_id":    request.UserID,
 		"position":  position,
 		"wait_time": waitTime,
 	})
