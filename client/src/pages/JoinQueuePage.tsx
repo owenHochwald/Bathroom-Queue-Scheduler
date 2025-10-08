@@ -8,16 +8,18 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+    Form,
+    FormControl,
+    FormDescription,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
 } from "@/components/ui/form"
-import { useContext } from "react"
+import { useContext, useState } from "react"
 import { NameContext, NameContextType } from "@/context/usernameContext"
+import { joinQueue } from "@/services/api"
+import { Toaster, toast } from 'sonner'
 
 const FormSchema = z.object({
     username: z.string().min(2, {
@@ -27,7 +29,8 @@ const FormSchema = z.object({
 
 
 export function JoinQueuePage() {
-    const { data, updateName }= useContext<NameContextType>(NameContext);
+    const { data, updateName } = useContext<NameContextType>(NameContext);
+    const [isEmergency, setIsEmergency] = useState(false);
 
     const form = useForm<z.infer<typeof FormSchema>>({
         resolver: zodResolver(FormSchema),
@@ -39,6 +42,19 @@ export function JoinQueuePage() {
 
     function onSubmit(name: z.infer<typeof FormSchema>) {
         updateName(name.username)
+    }
+
+    function handleJoinQueue(username: string, emergency: boolean) {
+        const req = joinQueue(username, emergency)
+        req.then((res) => {
+            return toast.success("Successfully joined the queue!");
+            // console.log("Joined queue:", res.data);
+        }).catch((err) => {
+            return toast.error("Error joining the queue. Please try again.");
+            console.error("Error joining queue:", err);
+        });
+
+
     }
 
     return (
@@ -89,18 +105,8 @@ export function JoinQueuePage() {
                         <CardDescription>Enter your information to join the bathroom queue</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="username">Username</Label>
-                            <Input
-                                id="username"
-                                placeholder="Enter your username"
-                                className="w-full"
-                            />
-                            <p className="text-xs text-muted-foreground">Required to join the queue</p>
-                        </div>
-
                         <div className="flex items-center space-x-2">
-                            <Checkbox id="emergency" />
+                            <Checkbox id="emergency" onClick={() => { setIsEmergency(!isEmergency) }} />
                             <div className="space-y-0.5">
                                 <Label
                                     htmlFor="emergency"
@@ -113,8 +119,8 @@ export function JoinQueuePage() {
                                 </p>
                             </div>
                         </div>
-
-                        <Button className="w-full" size="lg">
+                        <Toaster />
+                        <Button className="w-full" size="lg" onClick={async () => handleJoinQueue(data.name, isEmergency)}>
                             <UserPlus className="mr-2 h-4 w-4" />
                             Join Queue
                         </Button>
@@ -131,16 +137,6 @@ export function JoinQueuePage() {
                         <CardDescription>Remove yourself from the bathroom queue</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="leave-username">Username</Label>
-                            <Input
-                                id="leave-username"
-                                placeholder="Enter your username"
-                                className="w-full"
-                            />
-                            <p className="text-xs text-muted-foreground">Must match your queue entry</p>
-                        </div>
-
                         <div className="rounded-lg bg-muted p-4 space-y-2">
                             <div className="flex items-start gap-2">
                                 <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5" />

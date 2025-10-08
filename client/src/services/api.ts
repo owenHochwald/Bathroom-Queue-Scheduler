@@ -4,11 +4,9 @@ import { HistoryItem, QueueStatus } from '../types/types'
 import { client } from './client'
 
 export const joinQueue = async (userId: string, isEmergency: boolean): Promise<AxiosResponse<any, any>> => {
-    return await client.post('/join', {
-        data: {
-            user_id: userId,
-            is_emergency: isEmergency
-        }
+    return await client.post('/queue/join', {
+        user_id: userId,
+        is_emergency: isEmergency
     })
 }
 
