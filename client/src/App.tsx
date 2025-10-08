@@ -6,12 +6,17 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { QueueStatusPage } from '@/pages/QueueStatusPage';
 import { JoinQueuePage } from '@/pages/JoinQueuePage';
 import { HistoryPage } from '@/pages/HistoryPage';
-import NameContext from './context/usernameContext';
+import { NameContext } from './context/usernameContext';
 
 const queryClient = new QueryClient()
 
 function App() {
     const [activePage, setActivePage] = useState<string>('status');
+    const [data, setData] = useState({ name: '' });
+    const value = {
+        data,
+        updateName: (name: string) => setData({ name }),
+    }
 
     const renderPage = () => {
         switch (activePage) {
@@ -28,7 +33,7 @@ function App() {
 
     return (
         <QueryClientProvider client={queryClient}>
-            <NameContext value="Random User" >
+            <NameContext.Provider value={value}>
                 <SidebarProvider>
                     <div className="flex min-h-screen w-full">
                         <AppSidebar activePage={activePage} onNavigate={setActivePage} />
@@ -41,7 +46,7 @@ function App() {
                         </main>
                     </div>
                 </SidebarProvider>
-            </NameContext>
+            </NameContext.Provider>
 
         </QueryClientProvider>
     );

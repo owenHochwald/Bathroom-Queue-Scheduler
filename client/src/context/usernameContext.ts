@@ -1,5 +1,15 @@
 import { createContext } from "react";
 
-const NameContext = createContext('Random User');
+export type NameContextType = {
+    data: {
+        name: string;
+    },
+    updateName: (name: string) => void;
+}
 
-export default NameContext;
+export const NameContext = createContext<NameContextType>({
+    data: {
+        name: ''
+    },
+    updateName: () => {}
+});
