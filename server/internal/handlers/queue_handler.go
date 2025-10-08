@@ -90,21 +90,16 @@ func (q *QueueHandler) HandleStatus(c *gin.Context) {
 }
 
 func (q *QueueHandler) HandleGetPosition(c *gin.Context) {
-	var request GetPositionRequest
+	user_id := c.Query("user_id")
 
-	if err := c.ShouldBind(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	position, err := q.QueueService.GetPosition(request.UserID)
+	position, err := q.QueueService.GetPosition(user_id)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	waitTime, err := q.QueueService.EstimateWaitTime(request.UserID)
+	waitTime, err := q.QueueService.EstimateWaitTime(user_id)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -112,7 +107,7 @@ func (q *QueueHandler) HandleGetPosition(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{
-		"user_id":    request.UserID,
+		"user_id":   user_id,
 		"position":  position,
 		"wait_time": waitTime,
 	})
