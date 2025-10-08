@@ -1,0 +1,7 @@
+# Exclude shadcn/ui components from language statistics
+client/src/components/ui/** linguist-vendored
+client/src/lib/utils.ts linguist-vendored
+
+# Also exclude common vendor/dependency files
+client/node_modules/** linguist-vendored
+**/package-lock.json linguist-generated
