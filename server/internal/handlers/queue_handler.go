@@ -14,7 +14,7 @@ type QueueHandler struct {
 
 type JoinQueueRequest struct {
 	UserID      string `json:"user_id" validate:"required,min=3,max=20"`
-	IsEmergency bool   `json:"is_emergency" validate:"required"`
+	IsEmergency bool   `json:"is_emergency"`
 }
 
 type LeaveQueueRequest struct {
