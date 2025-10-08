@@ -11,7 +11,7 @@ export const joinQueue = async (userId: string, isEmergency: boolean): Promise<A
 }
 
 export const leaveQueue = async (userId: string): Promise<AxiosResponse<any, any>> => {
-    return await client.delete('/leave', {
+    return await client.delete('/queue/leave', {
         data: {
             user_id: userId
         }

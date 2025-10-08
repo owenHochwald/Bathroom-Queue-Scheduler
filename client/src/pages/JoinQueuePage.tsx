@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/form"
 import { useContext, useState } from "react"
 import { NameContext, NameContextType } from "@/context/usernameContext"
-import { joinQueue } from "@/services/api"
+import { joinQueue, leaveQueue } from "@/services/api"
 import { Toaster, toast } from 'sonner'
 
 const FormSchema = z.object({
@@ -45,15 +45,22 @@ export function JoinQueuePage() {
         toast.success("Hello, " + name.username);
     }
 
-    function handleJoinQueue(username: string, emergency: boolean) {
-        const req = joinQueue(username, emergency)
-        req.then((res) => {
-            return toast.success("Successfully joined the queue!");
-        }).catch((err) => {
-            return toast.error("Error joining the queue. Please try again.");
-        });
+    async function handleJoinQueue(username: string, emergency: boolean) {
+        await joinQueue(username, emergency)
+            .then((res) => {
+                return toast.success("Successfully joined the queue!");
+            }).catch((err) => {
+                return toast.error("Error joining the queue. Please try again.");
+            });
+    }
 
-
+    async function handleLeaveQueue(username: string) {
+        await leaveQueue(username)
+            .then((res) => {
+                return toast.success("Successfully leaved the queue!");
+            }).catch((err) => {
+                return toast.error("Error leaving the queue. Please try again.");
+            });
     }
 
     return (
@@ -149,7 +156,7 @@ export function JoinQueuePage() {
                             </div>
                         </div>
 
-                        <Button variant="destructive" className="w-full" size="lg">
+                        <Button variant="destructive" className="w-full" size="lg" onClick={async () => handleLeaveQueue(data.name)}>
                             <LogOut className="mr-2 h-4 w-4" />
                             Leave Queue
                         </Button>
