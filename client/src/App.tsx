@@ -12,7 +12,7 @@ const queryClient = new QueryClient()
 
 function App() {
     const [activePage, setActivePage] = useState<string>('status');
-    const [data, setData] = useState({ name: '' });
+    const [data, setData] = useState({ name: 'Guest' });
     const value = {
         data,
         updateName: (name: string) => setData({ name }),

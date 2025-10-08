@@ -42,16 +42,15 @@ export function JoinQueuePage() {
 
     function onSubmit(name: z.infer<typeof FormSchema>) {
         updateName(name.username)
+        toast.success("Hello, " + name.username);
     }
 
     function handleJoinQueue(username: string, emergency: boolean) {
         const req = joinQueue(username, emergency)
         req.then((res) => {
             return toast.success("Successfully joined the queue!");
-            // console.log("Joined queue:", res.data);
         }).catch((err) => {
             return toast.error("Error joining the queue. Please try again.");
-            console.error("Error joining queue:", err);
         });
 
 
