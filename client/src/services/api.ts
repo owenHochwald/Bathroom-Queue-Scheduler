@@ -23,7 +23,11 @@ export const getQueueStatus = async (): Promise<AxiosResponse<QueueStatus>> => {
 }
 
 export const getUserPosition = async (userId: string): Promise<AxiosResponse<UserStatus>> => {
-    return await client.get<UserStatus>('/queue/position' + userId)
+    return await client.get<UserStatus>('/queue/position', {
+        params : {
+            user_id: userId
+        }
+    })
 }
 
 
