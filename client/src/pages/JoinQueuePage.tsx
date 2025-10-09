@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AlertCircle, UserPlus, LogOut } from "lucide-react"
 import { useForm } from "react-hook-form"
-import { z } from "zod"
+import { set, z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
     Form,
@@ -18,8 +18,9 @@ import {
 } from "@/components/ui/form"
 import { useContext, useState } from "react"
 import { NameContext, NameContextType } from "@/context/usernameContext"
-import { joinQueue, leaveQueue } from "@/services/api"
+import { getUserPosition, joinQueue, leaveQueue } from "@/services/api"
 import { Toaster, toast } from 'sonner'
+import { UserStatus } from "@/types/types"
 
 const FormSchema = z.object({
     username: z.string().min(2, {
@@ -31,6 +32,8 @@ const FormSchema = z.object({
 export function JoinQueuePage() {
     const { data, updateName } = useContext<NameContextType>(NameContext);
     const [isEmergency, setIsEmergency] = useState(false);
+    const [inQueue, setInQueue] = useState(false);
+    const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
 
     const form = useForm<z.infer<typeof FormSchema>>({
         resolver: zodResolver(FormSchema),
@@ -48,6 +51,11 @@ export function JoinQueuePage() {
     async function handleJoinQueue(username: string, emergency: boolean) {
         await joinQueue(username, emergency)
             .then((res) => {
+                setInQueue(true);
+                handleGetStatus().then((res) => {
+                    // setQueueStatus();
+                });
+
                 return toast.success("Successfully joined the queue!");
             }).catch((err) => {
                 return toast.error("Error joining the queue. Please try again.");
@@ -57,10 +65,23 @@ export function JoinQueuePage() {
     async function handleLeaveQueue(username: string) {
         await leaveQueue(username)
             .then((res) => {
+                setInQueue(false);
                 return toast.success("Successfully leaved the queue!");
             }).catch((err) => {
                 return toast.error("Error leaving the queue. Please try again.");
             });
+    }
+
+    async function handleGetStatus() {
+        await getUserPosition(data.name)
+            .then((res) => {
+                console.log(res.data)
+                setUserStatus(res.data);
+                return
+            })
+            .catch((err) => {
+                return toast.error("Error getting queue status. Please try again.");
+            })
     }
 
     return (
@@ -165,48 +186,45 @@ export function JoinQueuePage() {
             </div>
 
             {/* Current Status Card */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Your Queue Status</CardTitle>
-                    <CardDescription>Information about your position in the queue</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {/* When not in queue */}
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <div className="rounded-full bg-muted p-3 mb-4">
-                            <UserPlus className="h-8 w-8 text-muted-foreground" />
+            {inQueue ? (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-primary/10 border border-primary/20">
+                        <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Position in Queue</p>
+                            <p className="text-3xl font-bold text-primary">{userStatus?.position}</p>
                         </div>
-                        <p className="text-lg font-semibold mb-2">Not in Queue</p>
-                        <p className="text-sm text-muted-foreground max-w-md">
-                            You are not currently in the bathroom queue. Enter your username above to join.
-                        </p>
+                        <div className="space-y-1 text-right">
+                            <p className="text-sm text-muted-foreground">Estimated Wait</p>
+                            <p className="text-2xl font-semibold">{Math.ceil(userStatus ? userStatus.wait_time / 60 : 0)} mins</p>
+                        </div>
                     </div>
+                    <div className="flex items-center gap-3 p-4 rounded-lg bg-muted">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-background">
+                            <span className="text-xl font-bold">{data.name[0]}</span>
+                        </div>
+                    </div>
+                </div>
 
-                    {/* When in queue - Replace the above div with this
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-lg bg-primary/10 border border-primary/20">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Position in Queue</p>
-                <p className="text-3xl font-bold text-primary">3rd</p>
-              </div>
-              <div className="space-y-1 text-right">
-                <p className="text-sm text-muted-foreground">Estimated Wait</p>
-                <p className="text-2xl font-semibold">8 min</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-4 rounded-lg bg-muted">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-background">
-                <span className="text-xl font-bold">JD</span>
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold">John Doe</p>
-                <p className="text-sm text-muted-foreground">Joined 5 minutes ago</p>
-              </div>
-            </div>
-          </div>
-          */}
-                </CardContent>
-            </Card>
+            ) : (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Your Queue Status</CardTitle>
+                        <CardDescription>Information about your position in the queue</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex flex-col items-center justify-center py-8 text-center">
+                            <div className="rounded-full bg-muted p-3 mb-4">
+                                <UserPlus className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                            <p className="text-lg font-semibold mb-2">Not in Queue</p>
+                            <p className="text-sm text-muted-foreground max-w-md">
+                                You are not currently in the bathroom queue. Enter your username above to join.
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
         </div>
     )
 }
