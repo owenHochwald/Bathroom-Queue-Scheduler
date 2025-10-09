@@ -49,39 +49,38 @@ export function JoinQueuePage() {
     }
 
     async function handleJoinQueue(username: string, emergency: boolean) {
-        await joinQueue(username, emergency)
-            .then((res) => {
-                setInQueue(true);
-                handleGetStatus().then((res) => {
-                    // setQueueStatus();
-                });
+        try {
+            await joinQueue(username, emergency)
+            // TODO: rely on live queue status rather than react state
+            setInQueue(true);
+            handleGetStatus()
+            return toast.success("Successfully joined the queue!");
 
-                return toast.success("Successfully joined the queue!");
-            }).catch((err) => {
-                return toast.error("Error joining the queue. Please try again.");
-            });
+        } catch {
+            return toast.error("Error joining the queue. Please try again.");
+
+        }
     }
 
     async function handleLeaveQueue(username: string) {
-        await leaveQueue(username)
-            .then((res) => {
-                setInQueue(false);
-                return toast.success("Successfully leaved the queue!");
-            }).catch((err) => {
-                return toast.error("Error leaving the queue. Please try again.");
-            });
+        try {
+            await leaveQueue(username)
+            // TODO: rely on live queue status rather than react state
+            setInQueue(false);
+            return toast.success("Successfully leaved the queue!");
+        } catch {
+            return toast.error("Error leaving the queue. Please try again.");
+
+        }
     }
 
     async function handleGetStatus() {
-        await getUserPosition(data.name)
-            .then((res) => {
-                console.log(res.data)
-                setUserStatus(res.data);
-                return
-            })
-            .catch((err) => {
-                return toast.error("Error getting queue status. Please try again.");
-            })
+        try {
+            const res = await getUserPosition(data.name)
+            setUserStatus(res.data);
+        } catch {
+            return toast.error("Error getting queue status. Please try again.");
+        }
     }
 
     return (
@@ -200,7 +199,7 @@ export function JoinQueuePage() {
                     </div>
                     <div className="flex items-center gap-3 p-4 rounded-lg bg-muted">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-background">
-                            <span className="text-xl font-bold">{data.name[0]}</span>
+                            <span className="text-xl font-bold">{(data.name && data.name.length) ? data.name[0] : "JP"}</span>
                         </div>
                     </div>
                 </div>
