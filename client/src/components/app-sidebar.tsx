@@ -54,8 +54,8 @@ export function AppSidebar({ activePage = "status", onNavigate, ...props }: AppS
                                     <ClipboardList className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col gap-0.5 leading-none">
-                                    <span className="text-lg font-semibold">Bathroom Queue</span>
-                                    <span className="text-xs text-muted-foreground">Management System</span>
+                                    <span className="text-lg font-semibold">Throne Tracker</span>
+                                    <span className="text-xs text-muted-foreground">Real Time Queue</span>
                                 </div>
                             </div>
                         </SidebarMenuButton>
