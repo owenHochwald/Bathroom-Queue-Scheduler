@@ -87,12 +87,15 @@ export function QueueStatusPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                            <span className="text-xl font-bold">JD</span>
-                        </div>
+                        {queueStatus?.current_user.length ?
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                <span className="text-xl font-bold">{queueStatus?.current_user.length ? queueStatus?.current_user[0] : "G"}</span>
+                            </div> :
+                            null
+                        }
                         <div className="flex flex-col gap-1">
-                            <p className="text-lg font-semibold">John Doe</p>
-                            <p className="text-sm text-muted-foreground">In bathroom for 4 minutes</p>
+                            <p className="text-lg font-semibold">{queueStatus?.current_user}</p>
+                            {/* <p className="text-sm text-muted-foreground">In bathroom for 4 minutes</p> */}
                         </div>
                     </div>
                 </CardContent>
@@ -106,51 +109,43 @@ export function QueueStatusPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {/* Queue Item 1 */}
-                        <div className="flex items-center gap-4 rounded-lg border border-border p-4">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
-                                1
-                            </div>
-                            <div className="flex flex-1 flex-col gap-1">
-                                <p className="font-semibold">Jane Smith</p>
-                                <p className="text-sm text-muted-foreground">Joined 2 minutes ago</p>
-                            </div>
-                            <Badge variant="secondary">Normal</Badge>
-                        </div>
-
-                        {/* Queue Item 2 */}
-                        <div className="flex items-center gap-4 rounded-lg border border-border p-4">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
-                                2
-                            </div>
-                            <div className="flex flex-1 flex-col gap-1">
-                                <p className="font-semibold">Mike Johnson</p>
-                                <p className="text-sm text-muted-foreground">Joined 1 minute ago</p>
-                            </div>
-                            <Badge variant="secondary">Normal</Badge>
-                        </div>
-
-                        {/* Queue Item 3 - Emergency */}
-                        <div className="flex items-center gap-4 rounded-lg border border-destructive bg-destructive/10 p-4">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive text-destructive-foreground font-bold">
-                                3
-                            </div>
-                            <div className="flex flex-1 flex-col gap-1">
-                                <p className="font-semibold">Sarah Williams</p>
-                                <p className="text-sm text-muted-foreground">Joined 30 seconds ago</p>
-                            </div>
-                            <Badge variant="destructive">Emergency</Badge>
-                        </div>
+                        {queueStatus &&
+                            queueStatus.queue.map((item, index) => (
+                                <div
+                                    className={`flex items-center gap-4 rounded-lg border p-4 ${item.is_emergency ? 'border-destructive bg-destructive/10' : 'border-border'
+                                        }`}
+                                    key={index}
+                                >
+                                    <div
+                                        className={`flex h-10 w-10 items-center justify-center rounded-full font-bold ${item.is_emergency
+                                            ? 'bg-destructive text-destructive-foreground'
+                                            : 'bg-primary text-primary-foreground'
+                                            }`}
+                                    >
+                                        {item.position}
+                                    </div>
+                                    <div className="flex flex-1 flex-col gap-1">
+                                        <p className="font-semibold">{item.user_id}</p>
+                                        <p className="text-sm text-muted-foreground">Joined at {item.joined_at}</p>
+                                    </div>
+                                    {item.is_emergency ? (
+                                        <Badge variant="destructive">Emergency</Badge>
+                                    ) : (
+                                        <Badge variant="secondary">Normal</Badge>
+                                    )}
+                                </div>
+                            ))
+                        }
                     </div>
 
-                    {/* Empty State - Hidden when there are items */}
-                    {/* Uncomment to show when queue is empty
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Users className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-lg font-semibold">Queue is Empty</p>
-            <p className="text-sm text-muted-foreground">No one is waiting right now</p>
-          </div>
-          */}
+                    {!queueStatus || queueStatus.queue.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                            <p className="text-lg font-semibold">Queue is Empty</p>
+                            <p className="text-sm text-muted-foreground">No one is waiting right now</p>
+                        </div>
+                    ) : null}
+
                 </CardContent>
             </Card>
 
