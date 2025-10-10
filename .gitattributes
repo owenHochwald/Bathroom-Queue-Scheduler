@@ -2,6 +2,13 @@
 client/src/components/ui/** linguist-vendored
 client/src/lib/utils.ts linguist-vendored
 
+# Exclude large TypeScript files to reduce language stats
+client/src/App.tsx linguist-vendored
+client/src/pages/JoinQueuePage.tsx linguist-vendored
+client/src/pages/HistoryPage.tsx linguist-vendored
+client/src/pages/QueueStatusPage.tsx linguist-vendored
+client/src/services/client.ts linguist-vendored
+
 # Also exclude common vendor/dependency files
 client/node_modules/** linguist-vendored
 **/package-lock.json linguist-generated

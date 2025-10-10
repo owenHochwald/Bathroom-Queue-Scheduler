@@ -1,7 +1,7 @@
 export interface HistoryItem {
-    userId: string;
+    user_id: string;
     duration: number;
-    queue: QueuePosition[];
+    timestamp: number;
 }
 
 export interface QueuePosition {

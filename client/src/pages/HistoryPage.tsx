@@ -1,188 +1,148 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { History, TrendingUp, Clock, Users } from "lucide-react"
+import { toast } from "sonner"
+import { getHistory } from "@/services/api"
+import { HistoryItem } from "@/types/types"
+import { useEffect, useState } from "react"
+
+interface TableEntry {
+    user: string;
+    duration: number;
+    joined: Date;
+}
 
 export function HistoryPage() {
-  return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
-      {/* Header */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Queue History</h1>
-        <p className="text-muted-foreground">Historical data and analytics for the bathroom queue</p>
-      </div>
+    const [tableItems, setTableItems] = useState<TableEntry[]>([]);
 
-      {/* Summary Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Uses Today</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">24</div>
-            <p className="text-xs text-muted-foreground mt-2">+12% from yesterday</p>
-          </CardContent>
-        </Card>
+    async function handleHistory(): Promise<TableEntry[]> {
+        try {
+            const res = await getHistory();
+            console.log(res.data);
+            return getTableEntries(res.data);
+        } catch {
+            toast.error("Failed to fetch history");
+            return [];
+        }
+    }
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Duration</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">4.5 min</div>
-            <p className="text-xs text-muted-foreground mt-2">Average time</p>
-          </CardContent>
-        </Card>
+    function timeAgo(date: Date): string {
+        const diff = Date.now() - date.getTime(); // ms
+        const minutes = Math.floor(diff / 1000 / 60);
+        if (minutes < 60) return `${minutes} minutes ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours} hours ago`;
+        const days = Math.floor(hours / 24);
+        return `${days} days ago`;
+    }
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Peak Time</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">2:30 PM</div>
-            <p className="text-xs text-muted-foreground mt-2">Most busy hour</p>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Emergency Uses</CardTitle>
-            <History className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground mt-2">Today's emergencies</p>
-          </CardContent>
-        </Card>
-      </div>
+    const getTableEntries = (history: HistoryItem[]): TableEntry[] => {
+        console.log("Input history:", history);
 
-      {/* History Tables */}
-      <Tabs defaultValue="recent" className="flex-1">
-        <TabsList className="grid w-full max-w-md grid-cols-3">
-          <TabsTrigger value="recent">Recent</TabsTrigger>
-          <TabsTrigger value="today">Today</TabsTrigger>
-          <TabsTrigger value="week">This Week</TabsTrigger>
-        </TabsList>
+        return history.map(item => {
+            console.log("Processing item:", item);
+            console.log("userId:", item.user_id);
+            console.log("queue:", item.timestamp);
+            const entry: TableEntry = {
+                user: item.user_id,
+                duration: item.duration,
+                joined: new Date(item.timestamp * 1000)
+            };
 
-        <TabsContent value="recent" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent History</CardTitle>
-              <CardDescription>Last 10 bathroom uses</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Wait Time</TableHead>
-                    <TableHead>Queue Size</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Time</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="font-medium">John Doe</TableCell>
-                    <TableCell>4:23</TableCell>
-                    <TableCell>2:15</TableCell>
-                    <TableCell>2</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">Normal</Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">5 min ago</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Jane Smith</TableCell>
-                    <TableCell>3:45</TableCell>
-                    <TableCell>0:00</TableCell>
-                    <TableCell>0</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">Normal</Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">15 min ago</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Mike Johnson</TableCell>
-                    <TableCell>6:12</TableCell>
-                    <TableCell>4:30</TableCell>
-                    <TableCell>3</TableCell>
-                    <TableCell>
-                      <Badge variant="destructive">Emergency</Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">32 min ago</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Sarah Williams</TableCell>
-                    <TableCell>5:01</TableCell>
-                    <TableCell>1:45</TableCell>
-                    <TableCell>1</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">Normal</Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">48 min ago</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Alex Brown</TableCell>
-                    <TableCell>3:30</TableCell>
-                    <TableCell>0:30</TableCell>
-                    <TableCell>1</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">Normal</Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">1 hour ago</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            console.log("Created entry:", entry);
+            return entry;
+        });
+    }
 
-        <TabsContent value="today" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Today's History</CardTitle>
-              <CardDescription>All bathroom uses from today</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center py-12 text-center">
-                <div className="space-y-3">
-                  <History className="h-12 w-12 text-muted-foreground mx-auto" />
-                  <p className="text-lg font-semibold">Data will populate here</p>
-                  <p className="text-sm text-muted-foreground max-w-sm">
-                    This section will show all bathroom uses from today once you implement the data fetching logic
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+    useEffect(() => {
+        handleHistory().then(items => {
+            console.log(items)
+            setTableItems(items)
+        });
+    }, []);
 
-        <TabsContent value="week" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>This Week's History</CardTitle>
-              <CardDescription>Bathroom usage summary for the current week</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center py-12 text-center">
-                <div className="space-y-3">
-                  <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto" />
-                  <p className="text-lg font-semibold">Weekly Analytics</p>
-                  <p className="text-sm text-muted-foreground max-w-sm">
-                    This section will show weekly trends and patterns once you implement the analytics logic
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
+    return (
+        <div className="flex flex-1 flex-col gap-6 p-6">
+            {/* Header */}
+            <div className="flex flex-col gap-2">
+                <h1 className="text-3xl font-bold tracking-tight">Queue History</h1>
+                <p className="text-muted-foreground">Historical data and analytics for the bathroom queue</p>
+            </div>
+
+            {/* Summary Stats */}
+            <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Uses Today</CardTitle>
+                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">
+                            {
+                                tableItems.filter(item => {
+                                    return Date.now() - item.joined.getTime() <= 24 * 60 * 60 * 1000;
+                                }).length
+                            }
+                        </div>
+                        {/* <p className="text-xs text-muted-foreground mt-2">+12% from yesterday</p> */}
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Avg Duration</CardTitle>
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">
+                            {
+                                Math.round(tableItems.reduce(
+                                    (sum, item) => sum + item.duration,
+                                    0
+                                ) / tableItems.length)
+                            } mins
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">Average time</p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* History Tables */}
+            <Tabs defaultValue="recent" className="flex-1">
+
+
+                <TabsContent value="recent" className="mt-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Recent History</CardTitle>
+                            <CardDescription>Last 100 bathroom uses</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>User</TableHead>
+                                        <TableHead>Duration</TableHead>
+                                        <TableHead>Join Time</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {tableItems && tableItems.map((item, index) =>
+                                        <TableRow key={index}>
+                                            <TableCell className="font-medium">{item.user}</TableCell>
+                                            <TableCell>{item.duration}</TableCell>
+                                            <TableCell>{timeAgo(item.joined)}</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+        </div>
+    )
 }
